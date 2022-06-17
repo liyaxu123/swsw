@@ -18,6 +18,14 @@
 - 退出登录
 - 简单的权限管理
 
+> 注意：前端项目需使用 Live Server 插件运行，地址和端口号：http://127.0.0.1:5500/web/middle.html
+因为Github授权的重定向页面为这个地址
+
+## 服务器启动指令
+```bash
+npm run start
+```
+
 ## 部分截图
 |登录页面 ![登录页](./images/login.png "登录页面.png")|授权页面 ![授权页面](./images/Authorize.png "授权页面.png")|首页 ![首页](./images/home.png "首页.png") |
 |---|---|---|
