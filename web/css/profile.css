@@ -1,0 +1,17 @@
+.profileBox {
+  width: 100%;
+  height: calc(100vh - 230px);
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.name {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  padding-top: 40px;
+}

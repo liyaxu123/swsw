@@ -1,0 +1,39 @@
+.el-carousel__item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.el-carousel__item img {
+  height: 100%;
+}
+
+h2 {
+  padding: 0 20px;
+  position: relative;
+}
+
+h2::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10px;
+  width: 5px;
+  height: 100%;
+  background-color: #0099cc;
+}
+
+.topBox {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: 200px;
+  gap: 10px;
+  margin-bottom: 60px;
+}
+
+.topBox img {
+  width: 100%;
+  cursor: pointer;
+  /* height: 100%; */
+}

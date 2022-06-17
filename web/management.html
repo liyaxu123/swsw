@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋</title>
+  <script src="./js/vue.js"></script>
+  <link rel="stylesheet" href="./css/element-plus.css">
+  <script src="./js/element-plus.js"></script>
+  <script src="./js/zh-cn.js"></script>
+  <script src="./js/icons-vue.js"></script>
+  <script src="./js/axios.min.js"></script>
+  <script src="./js/print.min.js"></script>
+  <link rel="stylesheet" href="./css/print.min.css">
+  <link rel="stylesheet" href="./css/common.css">
+  <link rel="stylesheet" href="./css/management.css">
+</head>
+
+<body>
+  <div id="app"></div>
+
+  <template id="tem">
+    <!-- 头部区域 -->
+    <header class="header">
+      <el-row style="height: 100%;" align="middle">
+        <el-col :span="8">
+          <a href="./index.html" style="color: #fff;">
+            <h1>三味书屋</h1>
+          </a>
+        </el-col>
+        <el-col :span="8">
+          <div class="search">
+            <el-popover placement="bottom" :visible="showSearchList" :width="300" trigger="click">
+              <template #reference>
+                <el-input v-model="searchVal" placeholder="请输入书名">
+                  <template #append>
+                    <el-button icon="Search" @click="searchByName" />
+                  </template>
+                </el-input>
+              </template>
+              <!-- 搜索内容展示区域 -->
+              <div class="searchList">
+                <div v-for="item in searchList" :key="item.id" class="searchItem"
+                  @click="toDetailPage(item.id, item.name)">{{item.name}} 作者：{{item.author}}</div>
+              </div>
+            </el-popover>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <!-- 操作区域 -->
+          <div class="action">
+            <el-row align="middle">
+              <el-col :span="4"></el-col>
+              <el-col :span="8" style="cursor: pointer;display: flex;align-items: center;">
+                <a href="./management.html" style="color: #fff;">
+                  <el-icon style="margin-right: 5px;">
+                    <Notebook />
+                  </el-icon>
+                  书籍管理
+                </a>
+              </el-col>
+              <el-col :span="8" style="cursor: pointer;display: flex;align-items: center;">
+                <a href="./topPage.html" target="_blank" style="color: #fff;">
+                  <el-icon style="margin-right: 5px;">
+                    <Histogram />
+                  </el-icon>
+                  排行榜
+                </a>
+              </el-col>
+              <!-- 头像下拉菜单 -->
+              <el-col :span="4">
+                <el-dropdown @command="handleDropdownClick">
+                  <span class="el-dropdown-link">
+                    <!-- 头像 -->
+                    <el-avatar :size="40" :src="userInfo.avatar_url" />
+                  </span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item disabled>{{ userInfo.name }}</el-dropdown-item>
+                      <el-dropdown-item divided command="profile">个人中心</el-dropdown-item>
+                      <el-dropdown-item divided command="layout">退出登录</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </el-col>
+            </el-row>
+          </div>
+        </el-col>
+      </el-row>
+    </header>
+
+    <div class="contentBox">
+      <div class="add">
+        <el-button type="primary" @click="handleAdd">新增</el-button>
+        <el-button type="success" icon="Download" @click="handleDownload">导出Excel</el-button>
+        <el-button type="primary" icon="Printer" plain @click="handlePrint">打印</el-button>
+      </div>
+      <!-- 表格 -->
+      <div id="printTable">
+        <el-table :data="tableData" style="width: 100%" border @sort-change="handleSortChange">
+          <el-table-column fixed prop="name" label="书名" sortable="custom" width="150"></el-table-column>
+          <el-table-column prop="coverImg" label="封面图" width="120">
+            <template #default="scope">
+              <el-image style="width: 100px; height: 100px" :src="scope.row.coverImg" fit="fill"
+                :preview-src-list="imgSrcList" :initial-index="0" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="author" label="作者" width="120"></el-table-column>
+          <el-table-column prop="desc" label="简介"></el-table-column>
+          <el-table-column prop="rate" label="评分" sortable="custom" width="260">
+            <template #default="scope">
+              <el-rate v-model="scope.row.rate" :max="10" allow-half disabled />
+            </template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="180">
+            <template #default="scope">
+              <el-button link type="primary" size="small" icon="Warning"
+                @click="toDetailPage(scope.row.id, scope.row.name)">详情</el-button>
+              <el-button link type="primary" size="small" icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
+              <el-button link type="danger" size="small" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <div class="pagination">
+        <!-- 分页器 -->
+        <el-pagination v-model:currentPage="page" v-model:page-size="limit" :page-sizes="[5, 10, 50, 100]"
+          :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+      </div>
+    </div>
+
+    <!-- 模态框 -->
+    <el-dialog v-model="dialogFormVisible" :title="dialogTitle">
+      <el-form :model="form" ref="ruleFormRef" :rules="rules" label-width="70px">
+        <el-form-item label="书名" prop="name">
+          <el-input v-model="form.name" placeholder="请输入书名" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="封面图" prop="coverImg">
+          <el-input v-model="form.coverImg" placeholder="请输入封面图" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="作者" prop="author">
+          <el-input v-model="form.author" placeholder="请输入作者" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="评分" prop="rate">
+          <div>
+            <el-rate v-model="form.rate" allow-half :max="10" show-score score-template="{value} 分" />
+          </div>
+        </el-form-item>
+        <el-form-item label="简介" prop="desc">
+          <el-input v-model="form.desc" placeholder="请输入简介" autocomplete="off" type="textarea" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 回到顶部 -->
+    <el-backtop :right="100" :bottom="100"></el-backtop>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <p class="bq">© 2022 三味书屋 隐私政策 京ICP证080268号 京ICP备10005211号</p>
+    </footer>
+  </template>
+</body>
+<script src="./js/xlsx.core.min.js"></script>
+<script>
+  /**
+     * 通用的打开下载对话框方法，没有测试过具体兼容性
+     * @param url 下载地址，也可以是一个blob对象，必选
+     * @param saveName 保存文件名，可选
+   */
+  function openDownloadDialog(url, saveName) {
+    if (typeof url == 'object' && url instanceof Blob) {
+      url = URL.createObjectURL(url); // 创建blob地址
+    }
+    var aLink = document.createElement('a');
+    aLink.href = url;
+    aLink.download = saveName || ''; // HTML5新增的属性，指定保存文件名，可以不要后缀，注意，file:///模式下不会生效
+    var event;
+    if (window.MouseEvent) event = new MouseEvent('click');
+    else {
+      event = document.createEvent('MouseEvents');
+      event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    }
+    aLink.dispatchEvent(event);
+  }
+
+  // 将一个sheet转成最终的excel文件的blob对象，然后利用URL.createObjectURL下载
+  function sheet2blob(sheet, sheetName) {
+    sheetName = sheetName || 'sheet1';
+    var workbook = {
+      SheetNames: [sheetName],
+      Sheets: {}
+    };
+    workbook.Sheets[sheetName] = sheet;
+    // 生成excel的配置项
+    var wopts = {
+      bookType: 'xlsx', // 要生成的文件类型
+      bookSST: false, // 是否生成Shared String Table，官方解释是，如果开启生成速度会下降，但在低版本IOS设备上有更好的兼容性
+      type: 'binary'
+    };
+    var wbout = XLSX.write(workbook, wopts);
+    var blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
+    // 字符串转ArrayBuffer
+    function s2ab(s) {
+      var buf = new ArrayBuffer(s.length);
+      var view = new Uint8Array(buf);
+      for (var i = 0; i != s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+      return buf;
+    }
+    return blob;
+  }
+
+  const app = Vue.createApp({
+    template: '#tem',
+    data() {
+      return {
+        searchVal: '',
+        showSearchList: false,
+        searchList: [],
+        tableData: [],
+        page: 1,
+        limit: 5,
+        total: 0,
+        sortName: '',
+        order: 'asc',
+        imgSrcList: [],
+        dialogFormVisible: false,
+        dialogTitle: '新增',
+        form: {
+          name: '',
+          author: '',
+          desc: '',
+          coverImg: '',
+          rate: 0
+        },
+        putId: '0',
+        rules: {
+          name: [
+            { required: true, message: '请输入书名', trigger: 'blur' },
+          ],
+          coverImg: [
+            { required: true, message: '请输入封面图', trigger: 'blur' },
+          ],
+          desc: [
+            { required: true, message: '请输入简介', trigger: 'blur' },
+          ],
+          author: [
+            { required: true, message: '请输入作者', trigger: 'blur' },
+          ],
+        }
+      }
+    },
+    watch: {
+      dialogFormVisible(val) {
+        if (!val) {
+          this.$refs.ruleFormRef.resetFields()
+        }
+      }
+    },
+    created() {
+      // 获取用户信息，若不存在用户信息，则需登录
+      const userInfo = JSON.parse(sessionStorage.getItem('userInfo'))
+      if (userInfo) {
+        this.userInfo = userInfo
+      } else {
+        this.$message({
+          message: '请您先登录',
+          type: 'error',
+        })
+        setTimeout(() => {
+          location.href = './login.html'
+        }, 1000)
+      }
+    },
+    mounted() {
+      this.getPageData()
+    },
+    methods: {
+      handlePrint() {
+        printJS({
+          printable: "printTable", //要打印内容的id
+          type: "html",
+          scanStyles: false,
+          css: ['./css/element-plus.css', './css/common.css', './css/management.css'],
+          // style: 'table{table-layout: fixed;border-collapse:collapse;} table tr td,th { padding:15px;border:1px #000 solid; white-space:normal;word-break:break-all; text-align:center}' // 表格样式
+        });
+        // printJS({
+        //   printable: this.tableData,
+        //   properties: [
+        //     { field: 'name', displayName: '书名' },
+        //     { field: 'coverImg', displayName: '封面图' },
+        //     { field: 'author', displayName: '作者' },
+        //     { field: 'desc', displayName: '简介' },
+        //     { field: 'rate', displayName: '评分' },
+        //   ],
+        //   type: 'json',
+        // })
+      },
+      handleDropdownClick(key) {
+        if (key === 'profile') {
+          location.href = './profile.html'
+        } else if (key === 'layout') {
+          // 退出登录
+          sessionStorage.removeItem('userInfo');
+          location.href = './login.html'
+        }
+      },
+      handleSortChange({ column, prop, order }) {
+        if (order) {
+          this.order = order == 'ascending' ? 'asc' : 'desc'
+          this.sortName = prop == 'name' ? 'id' : prop
+          this.getPageData();
+        }
+      },
+      async handleDownload() {
+        try {
+          let { data } = await axios.get(`http://localhost:3005/books`)
+
+          let aoa = [
+            ['书名', '封面图', '作者', '简介', '评分']
+          ];
+
+          data.data.forEach(item => {
+            let arr = [];
+            arr[0] = item.name
+            arr[1] = item.coverImg
+            arr[2] = item.author
+            arr[3] = item.desc
+            arr[4] = item.rate
+            aoa.push(arr)
+          })
+
+          let sheet = XLSX.utils.aoa_to_sheet(aoa);
+          openDownloadDialog(sheet2blob(sheet), '三味书屋.xlsx');
+
+          console.log(aoa);
+        } catch (error) {
+          console.log(error);
+        }
+      },
+      async getPageData() {
+        try {
+          // 获取分页数据，总条数在响应头的X-Total-Count属性中
+          let data = await axios.get(`http://localhost:3005/books?_page=${this.page}&_limit=${this.limit}&_sort=${this.sortName}&_order=${this.order}`)
+          this.tableData = data.data.data
+          console.log(data.data.data);
+          this.total = data.headers['x-total-count'] * 1
+          this.imgSrcList = data.data.data.map(item => item.coverImg)
+
+        } catch (error) {
+          console.log(error);
+        }
+      },
+      handleAdd() {
+        this.dialogTitle = '新增'
+        this.form.name = ''
+        this.form.author = ''
+        this.form.desc = ''
+        this.form.coverImg = ''
+        this.form.rate = 0
+        this.dialogFormVisible = true
+      },
+      handleEdit(row) {
+        this.dialogTitle = '编辑'
+        this.form.name = row.name
+        this.form.author = row.author
+        this.form.desc = row.desc
+        this.form.coverImg = row.coverImg
+        this.form.rate = row.rate
+        this.putId = row.id
+        this.dialogFormVisible = true
+      },
+      handleDelete(row) {
+        this.$confirm(`您确定要删除${row.name}这本书吗？`, {
+          title: '警告',
+          type: 'warning'
+        }).then(async () => {
+          let { data } = await axios({
+            method: 'delete',
+            url: `http://localhost:3005/books/${row.id}`,
+          })
+          console.log(data);
+          await this.getPageData();
+          this.$message({
+            type: 'success',
+            message: '删除成功'
+          })
+        })
+      },
+      handleSubmit() {
+        this.$refs.ruleFormRef.validate((valid, fields) => {
+          if (valid) {
+            axios({
+              method: this.dialogTitle === '新增' ? 'post' : 'put',
+              url: this.dialogTitle === '新增' ? 'http://localhost:3005/books' : `http://localhost:3005/books/${this.putId}`,
+              data: this.form
+            }).then(val => {
+              console.log(val);
+              this.getPageData()
+              this.$message({
+                message: this.dialogTitle === '新增' ? '添加成功' : '编辑成功',
+                type: 'success',
+              })
+              this.dialogFormVisible = false
+            })
+          } else {
+            console.log('error submit!', fields)
+          }
+        })
+      },
+      handleSizeChange(val) {
+        this.limit = val;
+        this.getPageData();
+      },
+      handleCurrentChange(val) {
+        this.page = val;
+        this.getPageData();
+      },
+      async searchByName() {
+        try {
+          let { data } = await axios.get(`http://localhost:3005/books?name_like=${this.searchVal}`);
+          console.log(data);
+          this.searchList = data.data;
+          this.showSearchList = true
+        } catch (error) {
+          console.log(error);
+        }
+      },
+      toDetailPage(id, name) {
+        location.href = `./detailPage.html?id=${id}&name=${name}`
+      },
+    }
+  });
+  app.use(ElementPlus, {
+    locale: ElementPlusLocaleZhCn,
+  });
+  for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+  }
+  app.mount("#app");
+</script>
+
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋 | 个人中心</title>
+  <script src="./js/vue.js"></script>
+  <link rel="stylesheet" href="./css/element-plus.css">
+  <script src="./js/element-plus.js"></script>
+  <script src="./js/icons-vue.js"></script>
+  <link rel="stylesheet" href="./css/common.css">
+  <link rel="stylesheet" href="./css/profile.css">
+  <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
+</head>
+
+<body>
+  <div id="app"></div>
+
+  <template id="tem">
+    <!-- 头部区域 -->
+    <header class="header">
+      <el-row style="height: 100%;" align="middle">
+        <el-col :span="8">
+          <a href="./index.html" style="color: #fff;">
+            <h1>三味书屋</h1>
+          </a>
+        </el-col>
+        <el-col :span="8">
+          <div class="search">
+            <el-popover placement="bottom" :visible="showSearchList" :width="300" trigger="click">
+              <template #reference>
+                <el-input v-model="searchVal" placeholder="请输入书名">
+                  <template #append>
+                    <el-button icon="Search" @click="searchByName" />
+                  </template>
+                </el-input>
+              </template>
+              <!-- 搜索内容展示区域 -->
+              <div class="searchList">
+                <div v-for="item in searchList" :key="item.id" class="searchItem"
+                  @click="toDetailPage(item.id, item.name)">{{item.name}} 作者：{{item.author}}</div>
+              </div>
+            </el-popover>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <!-- 操作区域 -->
+          <div class="action">
+            <el-row align="middle">
+              <el-col :span="4"></el-col>
+              <el-col :span="8" style="cursor: pointer;display: flex;align-items: center;">
+                <a href="./management.html" style="color: #fff;">
+                  <el-icon style="margin-right: 5px;">
+                    <Notebook />
+                  </el-icon>
+                  书籍管理
+                </a>
+              </el-col>
+              <el-col :span="8" style="cursor: pointer;display: flex;align-items: center;">
+                <a href="./topPage.html" target="_blank" style="color: #fff;">
+                  <el-icon style="margin-right: 5px;">
+                    <Histogram />
+                  </el-icon>
+                  排行榜
+                </a>
+              </el-col>
+              <!-- 头像下拉菜单 -->
+              <el-col :span="4">
+                <el-dropdown @command="handleDropdownClick">
+                  <span class="el-dropdown-link">
+                    <!-- 头像 -->
+                    <el-avatar :size="40" :src="userInfo.avatar_url" />
+                  </span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item disabled>{{ userInfo.name }}</el-dropdown-item>
+                      <el-dropdown-item divided command="profile">个人中心</el-dropdown-item>
+                      <el-dropdown-item divided command="layout">退出登录</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </el-col>
+            </el-row>
+          </div>
+        </el-col>
+      </el-row>
+    </header>
+
+    <!-- 个人信息 -->
+    <div class="profileBox">
+      <div class="center">
+        <el-avatar :size="140" :src="userInfo.avatar_url" />
+      </div>
+      <p class="name">{{ userInfo.name }}</p>
+      <p class="name">{{ userInfo.login }}</p>
+      <p class="name">
+        <el-icon>
+          <Location />
+        </el-icon>
+        {{ userInfo.location }}
+      </p>
+      <a class="center" :href="userInfo.html_url" target="_blank"
+        style="color: #000; font-size: 60px; padding-top: 30px;">
+        <span class="iconify" data-icon="akar-icons:github-fill"></span>
+      </a>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <p class="bq">© 2022 三味书屋 隐私政策 京ICP证080268号 京ICP备10005211号</p>
+    </footer>
+  </template>
+</body>
+<script>
+  const app = Vue.createApp({
+    template: '#tem',
+    data() {
+      return {
+        searchVal: '',
+        showSearchList: false,
+        searchList: [],
+        userInfo: {}
+      }
+    },
+    created() {
+      // 获取用户信息，若不存在用户信息，则需登录
+      const userInfo = JSON.parse(sessionStorage.getItem('userInfo'))
+      console.log(userInfo);
+      if (userInfo) {
+        this.userInfo = userInfo
+      } else {
+        this.$message({
+          message: '请您先登录',
+          type: 'error',
+        })
+        setTimeout(() => {
+          location.href = './login.html'
+        }, 1000)
+      }
+    },
+    methods: {
+      handleDropdownClick(key) {
+        if (key === 'profile') {
+          location.href = './profile.html'
+        } else if (key === 'layout') {
+          // 退出登录
+          sessionStorage.removeItem('userInfo');
+          location.href = './login.html'
+        }
+      },
+      async searchByName() {
+        try {
+          let { data } = await axios.get(`http://localhost:3005/books?name_like=${this.searchVal}`);
+          console.log(data);
+          this.searchList = data.data;
+          this.showSearchList = true
+        } catch (error) {
+          console.log(error);
+        }
+      },
+      toDetailPage(id, name) {
+        location.href = `./detailPage.html?id=${id}&name=${name}`
+      }
+    }
+  });
+  app.use(ElementPlus);
+  for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+  }
+  app.mount("#app");
+</script>
+
+</html>

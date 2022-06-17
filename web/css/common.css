@@ -1,0 +1,43 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+.header {
+  background-color: #333333;
+  height: 60px;
+  color: #fff;
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
+.searchItem {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.searchItem:hover {
+  background-color: #dbdada;
+}
+
+.footer {
+  height: 150px;
+  background-color: #333333;
+  overflow: hidden;
+}
+
+.bq {
+  text-align: center;
+  color: #fff;
+  font-size: 12px;
+  margin-top: 100px;
+}
+
+.el-rate__item {
+  display: flex;
+  align-items: center;
+}

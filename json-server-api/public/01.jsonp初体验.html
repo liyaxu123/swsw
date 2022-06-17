@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01.jsonp初体验</title>
+</head>
+
+<body>
+
+</body>
+
+
+<script>
+  // 3、我们前端要定义一个回调函数
+  function fun(data) {
+    console.log(data);
+    // 处理数据，渲染到页面
+  }
+</script>
+<!-- 1、将跨域的请求的url写到script标签的src属性 -->
+<script src="http://localhost:3001/api/ajax/jsonp?callback=fun"></script>
+
+</html>

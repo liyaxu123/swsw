@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋 | 排行榜</title>
+  <link rel="stylesheet" href="./css/topPage.css">
+  <script src="./js/echarts.js"></script>
+  <script src="./js/axios.min.js"></script>
+</head>
+
+<body>
+  <div id="main"></div>
+</body>
+<script type="text/javascript">
+  window.onload = async () => {
+    // 基于准备好的dom，初始化echarts实例
+    const myChart = echarts.init(document.getElementById('main'));
+
+    function contains(arr, dst) {
+      var i = arr.length;
+      while ((i -= 1)) {
+        if (arr[i] == dst) {
+          return i;
+        }
+      }
+      return false;
+    }
+
+    const attackSourcesColor = [
+      new echarts.graphic.LinearGradient(0, 1, 1, 1, [
+        { offset: 0, color: "#EB3B5A" },
+        { offset: 1, color: "#FE9C5A" },
+      ]),
+      new echarts.graphic.LinearGradient(0, 1, 1, 1, [
+        { offset: 0, color: "#FA8231" },
+        { offset: 1, color: "#FFD14C" },
+      ]),
+      new echarts.graphic.LinearGradient(0, 1, 1, 1, [
+        { offset: 0, color: "#F7B731" },
+        { offset: 1, color: "#FFEE96" },
+      ]),
+      new echarts.graphic.LinearGradient(0, 1, 1, 1, [
+        { offset: 0, color: "#395CFE" },
+        { offset: 1, color: "#2EC7CF" },
+      ]),
+    ];
+
+    const attackSourcesColor1 = [
+      "#EB3B5A",
+      "#FA8231",
+      "#F7B731",
+      "#3860FC",
+      "#1089E7",
+      "#F57474",
+      "#56D0E3",
+      "#1089E7",
+      "#F57474",
+      "#1089E7",
+      "#F57474",
+      "#F57474",
+    ];
+    // 评分
+    let rateData = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+    // 书名
+    let bookNames = ['《红楼梦1》', '《红楼梦2》', '《红楼梦3》', '《红楼梦4》', '《红楼梦5》', '《红楼梦6》', '《红楼梦7》', '《红楼梦8》', '《红楼梦9》', '《红楼梦10》'];
+
+    // 获取 Top10 数据
+    try {
+      let { data } = await axios.get('http://localhost:3005/books?_sort=rate&_order=desc&_start=0&_limit=10');
+      rateData = data.data.map(item => item.rate)
+      bookNames = data.data.map(item => item.name)
+    } catch (e) {
+      console.log(e);
+    }
+
+    const salvProMax = []; //背景按最大值
+    for (let i = 0; i < rateData.length; i++) {
+      salvProMax.push(rateData[0]);
+    }
+
+    function attackSourcesDataFmt(sData) {
+      var sss = [];
+      sData.forEach(function (item, i) {
+        let itemStyle = {
+          color: i > 3 ? attackSourcesColor[3] : attackSourcesColor[i],
+        };
+        sss.push({
+          value: item,
+          itemStyle: itemStyle,
+        });
+      });
+      return sss;
+    }
+
+    const option = {
+      backgroundColor: "#000",
+      title: {
+        text: '三味书屋 · 排行榜',
+        textStyle: {
+          fontSize: 40,
+          color: '#fff'
+        },
+        padding: [30, 0],
+        left: 'center'
+      },
+      tooltip: {
+        show: false
+      },
+      color: ["#F7B731"],
+      grid: {
+        left: "2%",
+        right: "2%",
+        width: "94%",
+        bottom: "2%",
+        top: "16%",
+        containLabel: true,
+      },
+      xAxis: {
+        type: "value",
+
+        splitLine: {
+          show: false,
+        },
+        axisLabel: {
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
+        axisLine: {
+          show: false,
+        },
+      },
+      yAxis: [
+        {
+          type: "category",
+          inverse: true,
+          axisLine: {
+            show: false,
+          },
+          axisTick: {
+            show: false,
+          },
+          axisPointer: {
+            label: {
+              show: true,
+            },
+          },
+          pdaaing: [5, 0, 0, 0],
+          postion: "right",
+          data: bookNames,
+          axisLabel: {
+            margin: 30,
+            fontSize: 10,
+            align: "left",
+            padding: [2, 0, 0, 0],
+            color: "#000",
+            rich: {
+              nt1: {
+                color: "#fff",
+                backgroundColor: attackSourcesColor1[0],
+                width: 13,
+                height: 13,
+                fontSize: 10,
+                align: "center",
+                borderRadius: 100,
+                lineHeight: "5",
+                padding: [2, 2, 2, 2],
+                // padding:[0,0,2,0],
+              },
+              nt2: {
+                color: "#fff",
+                backgroundColor: attackSourcesColor1[1],
+                width: 13,
+                height: 13,
+                fontSize: 10,
+                align: "center",
+                borderRadius: 100,
+                padding: [2, 2, 2, 2],
+              },
+              nt3: {
+                color: "#fff",
+                backgroundColor: attackSourcesColor1[2],
+                width: 13,
+                height: 13,
+                fontSize: 10,
+                align: "center",
+                borderRadius: 100,
+                padding: [2, 2, 2, 2],
+              },
+              nt: {
+                color: "#fff",
+                backgroundColor: attackSourcesColor1[3],
+                width: 13,
+                height: 13,
+                fontSize: 10,
+                align: "center",
+                lineHeight: 3,
+                borderRadius: 100,
+                padding: [2, 2, 2, 2],
+                lineHeight: 5,
+              },
+            },
+            formatter: function (value, index) {
+              index = contains(bookNames, value) + 1;
+              if (index - 1 < 3) {
+                return ["{nt" + index + "|" + index + "}"].join("\n");
+              } else {
+                return ["{nt|" + index + "}"].join("\n");
+              }
+            },
+          },
+        },
+        // 右侧书名
+        {
+          type: "category",
+          inverse: true,
+          axisTick: "none",
+          axisLine: "none",
+          show: true,
+          axisLabel: {
+            textStyle: {
+              color: "#fff",
+              fontSize: "20",
+            },
+          },
+          data: bookNames,
+        },
+      ],
+      series: [
+        {
+          zlevel: 1,
+          name: "评分",
+          type: "bar",
+          barWidth: "20px",
+          animationDuration: 1500,
+          data: attackSourcesDataFmt(rateData),
+          align: "center",
+          itemStyle: {
+            normal: {
+              barBorderRadius: 10,
+            },
+          },
+          label: {
+            show: true,
+            fontSize: 16,
+            color: "#fff",
+            textBorderWidth: 2,
+            padding: [0, 0, 0, 0],
+            formatter: function (v) {
+              return v.value + ' 星'
+            }
+          },
+        },
+        {
+          name: "评分",
+          type: "bar",
+          barWidth: 20,
+          barGap: "-100%",
+          data: salvProMax,
+          textStyle: {
+            //图例文字的样式
+            fontSize: 10,
+            color: "#fff",
+          },
+          itemStyle: {
+            normal: {
+              color: "#05325F",
+              width: "100%",
+              fontSize: 10,
+              barBorderRadius: 30,
+            },
+          },
+        },
+      ],
+    };
+
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);
+
+    window.onresize = () => {
+      myChart.resize()
+    }
+  }
+</script>
+
+</html>

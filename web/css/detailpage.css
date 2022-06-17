@@ -1,0 +1,13 @@
+.detailBox {
+  width: 100%;
+  height: calc(100vh - 230px);
+}
+
+.bookInfo {
+  line-height: 30px;
+  margin-top: 10px;
+}
+
+.em {
+  font-weight: bold;
+}

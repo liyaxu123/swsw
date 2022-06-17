@@ -1,0 +1,8 @@
+{
+  "port": 3005,            
+  "watch": true,           
+  "static": "./public",
+  "read-only": false, 
+  "no-cors": false,
+  "no-gzip": false
+}

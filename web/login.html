@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋 | 登录</title>
+  <link rel="stylesheet" href="./css/common.css">
+  <link rel="stylesheet" href="./css/login.css">
+  <script src="./js/iconify.min.js"></script>
+  <script src="./js/lottie-player.js"></script>
+</head>
+
+<body>
+  <h1>三味书屋</h1>
+
+  <div class="lottie2">
+    <lottie-player src="./lottieFile/lf20_bnxoocv2.json" background="transparent" speed="1"
+      style="width: 400px; height: 400px;" loop autoplay></lottie-player>
+  </div>
+
+  <div class="lottie">
+    <lottie-player src="./lottieFile/lf20_aorkkcxr.json" background="transparent" speed="1"
+      style="width: 400px; height: 400px;" loop autoplay></lottie-player>
+  </div>
+
+  <div class="login">
+    <button class="custom-btn btn-16" id="login">
+      <span style="margin-right: 10px;" class="iconify" data-icon="akar-icons:github-fill"></span>
+      Github授权登录
+    </button>
+  </div>
+
+
+  <script>
+    const loginBtn = document.getElementById('login');
+
+    // 点击登录按钮，前往 Github 授权页面，需要携带 client_id
+    loginBtn.onclick = function () {
+      location.href = 'https://github.com/login/oauth/authorize?client_id=e49f3a0f876d3ce2e16f'
+    }
+  </script>
+</body>
+
+</html>

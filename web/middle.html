@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋 | 授权页</title>
+  <script src="./js/axios.min.js"></script>
+</head>
+
+<body>
+  <script>
+    /* 
+      Github重定向的中间页面，需要获取到 Github 传过来的 code 值
+      同时向我们自己的服务器发送请求，将 code 传给我们的服务器，
+      我们的服务器拿到这个 code 后，再向 Github 发送 post 请求，将
+      code、client_id、client_secret发送给Github服务器，Github服务器
+      会返回给我们服务器一个 access_token 令牌，我们的服务器拿到这个 access_token 令牌
+      之后，就可以向 Github 服务器请求数据了，所以我们的服务器还需要
+      向 Github 服务器发送请求来获取用户的信息，获取到 Github 用户的信息
+      之后，将用户信息保存到我们自己的数据库中，之后再将用户信息返回给前端，前端
+      拿到用户信息之后，展示即可。
+    */
+    window.onload = async () => {
+      let params = new URLSearchParams(location.search)
+      let code = params.get('code')
+
+      let { data } = await axios({
+        method: 'post',
+        url: 'http://localhost:3005/login',
+        data: {
+          code
+        }
+      })
+
+      console.log(data);
+      sessionStorage.setItem('userInfo', JSON.stringify(data.data))
+      location.href = './index.html'
+    }
+
+  </script>
+</body>
+
+</html>

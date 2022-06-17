@@ -1,0 +1,14 @@
+.contentBox {
+  padding: 20px;
+  padding-top: 0;
+}
+
+.pagination {
+  padding-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.add {
+  padding-bottom: 20px;
+}
