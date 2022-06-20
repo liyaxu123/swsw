@@ -6,7 +6,7 @@
 
 > github授权登录流程: 1、A 网站让用户跳转到 GitHub。 2、GitHub 要求用户登录，然后询问"A 网站要求获得 xx 权限，你是否同意？" 3、用户同意，GitHub 就会重定向回 A 网站，同时发回一个授权码。 4、A 网站使用授权码，向 GitHub 请求令牌。 5、GitHub 返回令牌. 6、A 网站使用令牌，向 GitHub 请求用户数据。
 
-![](.\public\images\第三方授权登录流程图.png)
+![](.\json-server-api\public\images\第三方授权登录流程图.png)
 
 > 项目要求：
 >
@@ -328,6 +328,7 @@ http://localhost:3005/books
 | author   |    是    | String | 作者姓名                 |
 | desc     |    是    | String | 书籍简介                 |
 | coverImg |    是    | String | 封面图的URL链接          |
+| rate     |    是    | Number | 评分，满分10分，可打半分 |
 
 #### 请求示例：无
 
@@ -373,6 +374,7 @@ body参数部分：
 | author   |    是    | String | 作者姓名                 |
 | desc     |    是    | String | 书籍简介                 |
 | coverImg |    是    | String | 封面图的URL链接          |
+| rate     |    是    | Number | 评分，满分10分，可打半分 |
 
 #### 请求示例：
 
