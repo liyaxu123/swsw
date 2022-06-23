@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋</title>
+  <link rel="stylesheet" href="./layui/css/layui.css">
+  <script src="./layui/layui.js"></script>
+  <!-- 引入图片预览插件，文档地址：https://nzbin.github.io/photoviewer/ -->
+  <link rel="stylesheet" href="./css/photoviewer.min.css">
+  <script src="./js/photoviewer.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    #test1 {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .laytable-cell-1-0-1 {
+      height: 100%;
+    }
+
+    .laytable-cell-1-0-0 {
+      display: flex;
+      align-items: center;
+    }
+
+    /* 解决layui表格错位问题 */
+    .layui-table-cell {
+      height: inherit;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 表格容器，自定义排序需要设置 lay-filter 自定义属性 -->
+  <table id="demo" lay-filter="demo1"></table>
+  <!-- 表格操作列 -->
+  <script type="text/html" lay-filter="demo1" id="tableAction">
+    <a class="layui-btn layui-btn-primary layui-btn-sm" lay-event="detail">查看</a>
+    <a class="layui-btn layui-btn-sm" lay-event="more">更多 <i class="layui-icon layui-icon-down"></i></a>
+  </script>
+  <!-- 分页容器 -->
+  <div id="test1"></div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/axios@0.27.2/dist/axios.min.js"></script>
+<script>
+  layui.use(['table', 'laypage', 'rate', 'layer'], async function () {
+    // 加载 layui 组件
+    const table = layui.table;
+    const laypage = layui.laypage;
+    const rate = layui.rate;
+    const dropdown = layui.dropdown //下拉菜单
+    const layer = layui.layer //弹层
+
+    // =============================================================
+
+    // 顶层作用域 - 初始化分页条件
+    const initConfig = {
+      page: 1,
+      limit: 5,
+      sort: '',
+      order: 'asc',
+      total: 0, // 总条数
+      coverImages: [], // 保存所有的封面图
+      // 图片预览插件配置项
+      PhotoViewerOptions: {
+        index: 0, // this option means you will start at first image
+        // 国际化
+        i18n: {
+          minimize: '最小化',
+          maximize: '最大化',
+          close: '关闭',
+          zoomIn: '放大(+)',
+          zoomOut: '缩小(-)',
+          prev: '上一张(<—)',
+          next: '下一张(—>)',
+          fullscreen: '全屏',
+          actualSize: '实际尺寸(Ctrl+Alt+0)',
+          rotateLeft: '向左旋转',
+          rotateRight: '向右旋转(Ctrl+.)',
+        }
+      }
+    }
+
+    // =============================================================
+
+    // 首次渲染表格
+    let data = await getPageData(initConfig.page, initConfig.limit, initConfig.sort, initConfig.order);
+    console.log(data);
+    // 获取总条数
+    initConfig.total = data.headers['x-total-count'] * 1;
+    // 渲染表格
+    renderTable(data.data.data);
+    // 渲染分页器
+    renderLayPage(initConfig.total, initConfig.limit);
+
+    // 监听表格排序事件
+    table.on('sort(demo1)', async function (obj) { //注：sort 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+      console.log(obj.field); //当前排序的字段名
+      // console.log(obj.type); //当前排序类型：desc（降序）、asc（升序）、null（空对象，默认排序）
+      // console.log(this); //当前排序的 th 对象
+
+      // 修改顶级作用域中的值
+      initConfig.sort = obj.field;
+      if (obj.field == 'name') {
+        initConfig.sort = 'id'
+      }
+      initConfig.order = obj.type
+
+      // 重新获取分页数据
+      const { data: { data: pageData } } = await getPageData(initConfig.page, initConfig.limit, initConfig.sort, initConfig.order);
+      console.log(pageData);
+
+      // 刷新表格数据
+      table.reload('demo', {
+        data: pageData,
+        limit: initConfig.limit,
+        initSort: obj, //记录初始排序，如果不设的话，将无法标记表头的排序状态。
+      });
+    });
+
+    // 监听表格工具栏事件
+    table.on('tool(demo1)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+      const data = obj.data //获得当前行数据
+      const layEvent = obj.event; //获得 lay-event 对应的值
+
+      console.log(data, layEvent);
+      if (layEvent === 'detail') {
+        layer.msg('查看操作');
+      } else if (layEvent === 'more') {
+        //下拉菜单
+        dropdown.render({
+          elem: this, //触发事件的 DOM 对象
+          show: true, //外部事件触发即显示
+          data: [{
+            title: '编辑',
+            id: 'edit'
+          }, {
+            title: '删除',
+            id: 'del'
+          }],
+          click: function (menudata) {
+            if (menudata.id === 'del') {
+              layer.confirm('真的删除行么', function (index) {
+                obj.del(); //删除对应行（tr）的DOM结构
+                layer.close(index);
+                //向服务端发送删除指令
+              });
+            } else if (menudata.id === 'edit') {
+              layer.msg('编辑操作，当前行 ID:' + data.id);
+            }
+          },
+          align: 'right', //右对齐弹出
+          style: 'box-shadow: 1px 1px 10px rgb(0 0 0 / 12%);' //设置额外样式
+        })
+      }
+    })
+    // =============================================================
+
+    // 封装 - 获取分页数据的函数
+    async function getPageData(page, limit, sort, order) {
+      try {
+        const res = await axios.get(`http://localhost:3005/books?_page=${page}&_limit=${limit}&_sort=${sort}&_order=${order}`)
+        // 设置封面图集合的数据
+        initConfig.coverImages = res.data.data.map(item => ({
+          src: item.coverImg,
+          title: item.name
+        }));
+        return res;
+      } catch (e) {
+        //TODO handle the exception
+      }
+    }
+
+    // 封装 - 渲染表格的函数
+    function renderTable(data) {
+      //第一个实例
+      table.render({
+        elem: '#demo',
+        // 关闭前端排序，使用服务器排序
+        autoSort: false,
+        cols: [[ //表头
+          { field: 'name', title: '书名', sort: true, fixed: 'left', style: 'height: 100px;', width: 140 },
+          { field: 'coverImg', title: '封面图', align: 'center', style: 'height: auto;', templet: d => `<img class='coverImage' src='${d.coverImg}'>`, width: 140 },
+          { field: 'author', title: '作者', width: 100 },
+          { field: 'desc', title: '简介' },
+          { field: 'rate', title: '评分', sort: true, templet: d => `<div id="rate${d.id}"></div>` },
+          { field: '', title: '操作', width: 200, align: 'center', toolbar: '#tableAction' },
+        ]],
+        // 表格数据
+        data,
+        // 表格数据渲染完的回调
+        done: data => {
+          console.log(data);
+          // 遍历数据渲染评分组件
+          data.data.forEach(item => {
+            rate.render({
+              elem: `#rate${item.id}`, //绑定元素
+              length: 10,
+              value: item.rate,
+              half: true, // 允许选择半星
+              readonly: true, // 只读
+              text: true, //显示文本
+            });
+          });
+
+          // 获取封面图
+          const coverImageList = document.querySelectorAll('.coverImage');
+          // 给每张封面图绑定点击事件
+          coverImageList.forEach((img, idx) => {
+            img.onclick = function () {
+              console.log(idx);
+              initConfig.PhotoViewerOptions.index = idx;
+              // 初始化图片预览插件
+              const viewer = new PhotoViewer(initConfig.coverImages, initConfig.PhotoViewerOptions);
+            }
+          })
+        }
+      });
+    }
+
+    // 封装 - 渲染分页器的函数
+    function renderLayPage(count, limit) {
+      //执行一个laypage实例
+      laypage.render({
+        elem: 'test1', //注意，这里的 test1 是 ID，不用加 # 号
+        count, //数据总数，从服务端得到
+        limit,
+        limits: [5, 10, 50, 100],
+        layout: ['count', 'limit', 'prev', 'page', 'next', 'skip'],
+        // 页码发生变化触发
+        jump: async function (obj, first) {
+          //首次不执行
+          if (!first) {
+            console.log(obj);
+            initConfig.page = obj.curr;
+            initConfig.limit = obj.limit;
+
+            // 获取分页收据
+            const { data: { data: pageData } } = await getPageData(initConfig.page, initConfig.limit, initConfig.sort, initConfig.order);
+            console.log(pageData);
+            // 刷新表格数据
+            table.reload('demo', {
+              data: pageData,
+              limit: initConfig.limit,
+            });
+          }
+        }
+      });
+    }
+  });
+</script>
+
+</html>

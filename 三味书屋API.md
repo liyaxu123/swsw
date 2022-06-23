@@ -445,6 +445,531 @@ http://localhost:3005/books?_sort=id&_order=desc
 略
 ```
 
+## 项目知识点补充
+
+### iframe专题
+
+在本项目中，我们会发现，每个页面都拥有头部导航部分和页脚部分，每个页面都要重复的复制粘贴这两部分的代码，非常的麻烦，而且不够优雅。我们可以通过**iframe**框架来解决这个痛点。
+
+具体思路：
+
+- 将共有的头部区域的代码抽离到**header.html**中
+- 将共有的页脚区域代码抽离到**footer.html**中
+- 在其他页面中通过**iframe**标签将**header.html**和**footer.html**引入
+
+接下来我们将研究嵌套页面之间将如何通信的问题：
+
+1. 父页面与子页面数据通信
+2. 子页面与父页面数据通信
+3. 祖孙级页面之间通信
+
+首先我们写好这几个页面：
+
+**header.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>header页面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      width: 100%;
+      height: 60px;
+      background-color: skyblue;
+    }
+
+    h1 {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>我是头部页面</h1>
+    <button id="btn1">获取父级页面中的数据</button>
+    <button id="btn2">执行父级页面中的函数</button>
+    <button id="btn3">操作父级页面中的元素</button>
+  </header>
+
+  <iframe src="./sun.html" frameborder="0"></iframe>
+</body>
+
+<script>
+  var name = '我是【头部页面】';
+  var msg = '我是【头部页面】中的 msg';
+  const num = 33;
+  window.num = num
+
+  let data = null;
+
+  function fun(val) {
+    alert('我是【头部页面】中的 fun 函数，接收的参树：' + val)
+    data = val
+  }
+
+  const btn1 = document.getElementById('btn1')
+  const btn2 = document.getElementById('btn2')
+  const btn3 = document.getElementById('btn3')
+
+  btn1.onclick = function () {
+    console.log(window.parent.name);
+    console.log(window.parent.msg);
+    console.log(window.parent.num);
+    // 在子级页面中跳转页面
+    window.top.location.href = './detail.html'
+  }
+
+  btn2.onclick = function () {
+    window.parent.fun(msg);
+  }
+
+  btn3.onclick = function () {
+    console.log(window.parent.document);
+    let pMain = window.parent.document.querySelector('main');
+    pMain.style.background = 'red'
+    let pH1 = window.parent.document.querySelector('h1');
+    pH1.innerText = '被子页面修改了'
+  }
+
+</script>
+
+</html>
+```
+
+**footer.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    footer {
+      width: 100%;
+      height: 100px;
+      background-color: #333;
+      color: #fff;
+    }
+
+    h1 {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <footer>
+    <h1>页脚页面</h1>
+  </footer>
+</body>
+
+</html>
+```
+
+**sun.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>我是孙子页面</h1>
+  <button id="btn1">获取爷爷页面中的数据</button>
+</body>
+
+<script>
+  var name = '我是【孙子页面】';
+  var msg = '我是【孙子页面】中的 msg';
+  let num = 3;
+
+  const btn1 = document.getElementById('btn1')
+
+  // 获取爷爷页面中的数据
+  btn1.onclick = function () {
+    console.log(window.parent.parent.name);
+    console.log(window.parent.parent.msg);
+
+    // 还可以直接通过 window.top 直接获取到祖先窗口
+    console.log(window.top.name);
+    console.log(window.top.msg);
+  }
+</script>
+
+</html>
+```
+
+**index.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三味书屋</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    #headerFrame {
+      width: 100%;
+      height: 60px;
+    }
+
+    #footerIframe {
+      width: 100%;
+      height: 100px;
+    }
+
+    main {
+      width: 100%;
+      height: calc(100vh - 160px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    iframe {
+      vertical-align: middle;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 头部区域 -->
+  <iframe id="headerFrame" src="./header.html" frameborder="0"></iframe>
+
+  <!-- 主体区域 -->
+  <main>
+    <h1>主体部分</h1>
+    <button id="btn1">获取头部页面中的数据</button>
+    <button id="btn2">执行头部页面中的函数</button>
+    <button id="btn3">操作头部页面中的元素</button>
+    <button id="btn4">获取孙子页面中的数据</button>
+  </main>
+
+  <!-- 页脚区域 -->
+  <iframe id="footerIframe" src="./footer.html" frameborder="0"></iframe>
+</body>
+
+<script>
+  var name = '我是【首页】';
+  var msg = '我是【首页】中的 msg';
+  let num = 3;
+  window.num = num
+
+  function fun(val) {
+    alert('我是【首页】中的 fun 函数，接收的参树：' + val)
+  }
+
+  const btn1 = document.getElementById('btn1')
+  const btn2 = document.getElementById('btn2')
+  const btn3 = document.getElementById('btn3')
+  const btn4 = document.getElementById('btn4')
+  const headerFrame = document.getElementById('headerFrame')
+
+  headerFrame.onload = function () {
+    console.log('头部页面加载完毕')
+  }
+
+  // 获取子级页面中的数据
+  btn1.onclick = function () {
+    console.log(headerFrame.contentWindow.name);
+    console.log(headerFrame.contentWindow.msg);
+    console.log(headerFrame.contentWindow.num);
+  }
+
+  // 调用子级页面中的函数，并且可以将父页面中的数据传递给子页面
+  btn2.onclick = function () {
+    headerFrame.contentWindow.fun(msg);
+  }
+
+  // 在父页面中操作子页面的元素
+  btn3.onclick = function () {
+    let sonHeader = headerFrame.contentWindow.document.querySelector('header');
+    sonHeader.style.background = 'red';
+    let sonH1 = headerFrame.contentWindow.document.querySelector('h1');
+    sonH1.innerText = '被父页面修改了'
+  }
+
+  // 获取孙子页面中的数据
+  btn4.onclick = function () {
+    console.log(headerFrame.contentWindow.document.querySelector('iframe').contentWindow.name);
+    console.log(headerFrame.contentWindow.document.querySelector('iframe').contentWindow.msg);
+  }
+</script>
+
+</html>
+```
+
+**detail.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>详情页</title>
+</head>
+
+<body>
+  <h1>详情页</h1>
+</body>
+
+</html>
+```
+
+> 总结：
+>
+> - 父页面获取子页面中的数据：
+>   - 通过：**headerFrame标签.contentWindow.子页面全局作用域中的变量名**
+>   - 例如：headerFrame.contentWindow.name
+> - 父页面调用子页面中的函数，并且可以传递参数：
+>   - 通过：**headerFrame标签.contentWindow.子页面全局作用域中的函数名(实参);**
+>   - 例如：headerFrame.contentWindow.fun(msg);
+> - 在父页面中操作子页面的元素：
+>   - 通过：**headerFrame标签.contentWindow.document.querySelector('子页面中的标签')**
+>   - 例如：headerFrame.contentWindow.document.querySelector('header');
+> - 在父页面中获取孙子页面中的数据：
+>   - 通过：**headerFrame标签.contentWindow.document.querySelector('子页面中的iframe标签').contentWindow.name**
+>   - 例如：headerFrame.contentWindow.document.querySelector('iframe').contentWindow.name
+> - 在子页面中获取父页面中的数据：
+>   - 通过：**window.parent.父页面中全局作用域中的变量名**
+>   - 例如：window.parent.name
+> - 在子页面中调用父页面中的函数，并且可以传递参数：
+>   - 通过：**window.parent.父页面中全局作用域中的函数名(实参);**
+>   - 例如：window.parent.fun(msg);
+> - 在子页面中操作父页面中的元素：
+>   - 通过：**window.parent.document.querySelector('父页面中的元素')**
+>   - 例如：window.parent.document.querySelector('main')
+> - 在子页面中使父页面路径跳转：
+>   - 通过：**window.top.location.href = '要跳转的路径'**
+>   - 例如：window.top.location.href = './detail.html'
+> - 在孙子页面中获取爷爷页面中的数据：
+>   - 通过：**window.parent.parent.爷爷页面中全局作用域中的变量名**
+>   - 例如：window.parent.parent.name
+>   - 还可以直接通过 **window.top** 直接获取到祖先窗口
+>   - 例如：window.top.name
+
+### 防抖函数和节流函数
+
+在我们这个项目中，我们在做搜索书籍的功能时，只要在搜索框里面输入内容，就会一直发送网络请求，十分消耗性能，我们正确的做法应该是用户在输入的时候不发送请求，当用户输入完毕之后，只发送一次请求即可，从而达到性能优化的目的。
+
+那么我们如何实现上述的需求呢？
+
+我们接下来就需要知道两个概念：**函数防抖**和**函数节流**
+
+**防抖函数与节流函数都是控制事件触发频率的函数，能够在某些场景实现性能优化。**
+
+**防抖**： 防抖是指在 n 秒的时间内，如果连续触发当前事件，就不会执行回调函数。直到 n 秒后，才执行回调函数。
+
+**节流**：节流是在函数被频繁调用的时候，定期性的执行，从而控制事件的触发频率。也就是说当达到了一定的时间间隔就会执行一次；可以理解为是**缩减执行频率**
+
+**区别**：**防抖函数在 n 秒内只执行1次，节流函数在 n 秒内可以执行多次**
+
+在实际项目开发中推荐使用 **Lodash.js** 库 或者 **Underscore.js** 库中给我们提供的防抖函数和节流函数
+
+- [Lodash.js](https://www.lodashjs.com/)：是一个一致性、模块化、高性能的 JavaScript 实用工具库。
+  - 防抖函数：`_.debounce(func, [wait=0], [options=])`
+  - 节流函数：`_.throttle(func, [wait=0], [options=])`
+- [Underscore.js](https://underscorejs.net/)：是一个JavaScript实用库，提供了一整套函数式编程的实用功能，但是没有扩展任何JavaScript内置对象。
+  - 防抖函数：`_.debounce(function, wait, [immediate])`
+  - 节流函数：`_.throttle(function, wait, [options])`
+
+#### 原理实现：
+
+**防抖函数：**
+
+实现思路：利用setTimeout定时器来延迟执行对应的事件函数，在执行setTimeout之前我们要先清除定时器，这样便可达到如果一直触发防抖函数就会重新计时的效果，只有等时间到了才执行对应的函数，这样便可实现防抖的功能。里面还涉及很多具体的细节，比如this指向问题、事件对象问题、是否立即执行、返回值问题。下面是简单版的实现，完善版的代码可以参考我公众号里面的文章。
+
+```js
+// 手写我们自己的防抖函数，需要解决一下this问题和事件对象问题
+function debounce(fn, wait) {
+    let timer;
+    return function (...arg) {
+        // const args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            // 修改 fn 函数的this指向，同时传递事件对象e
+            fn.apply(this, arg)
+        }, wait);
+    }
+}
+```
+
+> 应用场景：
+>
+> 1、scroll事件滚动触发
+>
+> 2、搜索框输入查询
+>
+> 3、表单验证
+>
+> 4、按钮提交事件
+>
+> 5、浏览器窗口缩放，resize事件
+
+**节流函数：**
+
+时间戳版：
+
+实现思路：利用当前最新的时间戳减去上一次的时间戳得到一个时间间隔，如果这个时间间隔大于我们定义的wait就执行对应的事件函数，否则就不执行，以此实现节流的功能。
+
+特点：第一次会触发，最后一次不会触发函数，不顾头，顾尾。
+
+```js
+// 精简版
+function throttle(fn, wait) {
+    let last = 0;
+    return function () {
+        var now = Date.now();
+        if (now - last > wait) {
+            fn.apply(this, arguments);
+            last = now;
+        }
+    }
+}
+```
+
+```js
+// 完善版
+function throttle(func, wait) {
+    let context, args;
+    // 旧的时间戳
+    let old = 0;
+    return function () {
+        context = this;
+        args = arguments;
+        // 获取当前的时间戳
+        let now = new Date().valueOf();
+        if (now - old > wait) {
+            // 立即执行
+            func.apply(context, args);
+            old = now;
+        }
+    }
+}
+```
+
+定时器版：
+
+实现思路：在一直触发节流函数的情况下，利用setTimeout定时器每隔指定的时间去执行对应的函数。
+
+特点：第一次不会触发，最后一次会触发函数，顾头，不顾尾。
+
+```js
+function throttle(func, wait) {
+    let context, args, timeout;
+    return function () {
+        context = this;
+        args = arguments;
+        if (!timeout) {
+            timeout = setTimeout(function () {
+                timeout = null;
+                func.apply(context, args);
+            }, wait);
+        }
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
